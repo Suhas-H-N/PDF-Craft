@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>PDF Forge v2 — Professional PDF Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#07070f;--surface:#0f0f1e;--panel:#161628;--card:#1c1c34;
+  --border:rgba(255,255,255,0.07);--border2:rgba(124,111,255,0.3);
+  --accent:#7c6fff;--accent2:#a78bfa;--cyan:#22d3ee;--green:#4ade80;
+  --red:#f87171;--yellow:#fbbf24;--orange:#fb923c;--pink:#f472b6;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#475569;
+  --grad:linear-gradient(135deg,#7c6fff,#a78bfa);
+  --grad2:linear-gradient(135deg,#7c6fff,#22d3ee);
+  --r:10px;--r2:16px;--shadow:0 8px 32px rgba(0,0,0,0.5);
+  --font:'Inter',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--font);background:var(--bg);color:var(--text);overflow-x:hidden}
+button{cursor:pointer;border:none;font-family:var(--font)}
+input,select,textarea{font-family:var(--font)}
+.hidden{display:none!important}
+
+/* ── LAYOUT ── */
+.app{display:grid;grid-template-columns:270px 1fr;grid-template-rows:58px 1fr;min-height:100vh}
+.topbar{grid-column:1/-1;background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 1.25rem;gap:0.875rem;position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 20px rgba(0,0,0,0.3)}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);
+  overflow-y:auto;padding:0.75rem 0 2rem;position:sticky;top:58px;height:calc(100vh - 58px)}
+.sidebar::-webkit-scrollbar{width:4px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.main{padding:1.5rem;overflow-y:auto;background:var(--bg)}
+
+/* ── TOPBAR ── */
+.logo{font-size:1.1rem;font-weight:700;background:var(--grad);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  letter-spacing:-0.02em;white-space:nowrap;flex-shrink:0}
+.logo small{font-weight:300;opacity:0.7;font-size:0.7em}
+.topbar-file{flex:1;display:flex;align-items:center;gap:0.625rem;overflow:hidden}
+.file-badge{background:var(--card);border:1px solid var(--border2);border-radius:8px;
+  padding:0.3rem 0.75rem;font-size:0.75rem;color:var(--accent2);font-family:var(--mono);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:320px}
+.file-badge.empty{color:var(--text3);border-color:var(--border)}
+.btn{padding:0.45rem 0.9rem;border-radius:8px;font-size:0.78rem;font-weight:600;
+  transition:all 0.18s;display:inline-flex;align-items:center;gap:0.375rem;white-space:nowrap}
+.btn-primary{background:var(--grad);color:#fff}
+.btn-primary:hover{opacity:0.88;transform:translateY(-1px);box-shadow:0 4px 16px rgba(124,111,255,0.4)}
+.btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--accent2)}
+.btn-ghost:hover{background:rgba(124,111,255,0.1)}
+.btn-sm{padding:0.33rem 0.65rem;font-size:0.72rem}
+.btn-success{background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff}
+.btn-danger{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);color:var(--red)}
+.btn-danger:hover{background:rgba(248,113,113,0.2)}
+.btn-cyan{background:linear-gradient(135deg,#06b6d4,#0891b2);color:#fff}
+.btn-orange{background:linear-gradient(135deg,#f97316,#ea580c);color:#fff}
+
+/* ── SIDEBAR ── */
+.nav-section{padding:0.75rem 1rem 0.2rem;font-size:0.6rem;font-weight:700;
+  letter-spacing:0.14em;text-transform:uppercase;color:var(--text3);margin-top:0.25rem}
+.nav-item{display:flex;align-items:center;gap:0.65rem;padding:0.5rem 0.875rem;
+  cursor:pointer;transition:all 0.14s;font-size:0.8rem;color:var(--text2);
+  border-left:3px solid transparent;border-radius:6px;margin:0 0.375rem}
+.nav-item:hover{background:rgba(124,111,255,0.07);color:var(--text)}
+.nav-item.active{background:rgba(124,111,255,0.12);color:var(--accent2);border-left-color:var(--accent)}
+.nav-icon{font-size:0.9rem;width:18px;text-align:center;flex-shrink:0}
+.nav-count{margin-left:auto;background:rgba(124,111,255,0.2);color:var(--accent2);
+  border-radius:100px;padding:0.1rem 0.45rem;font-size:0.62rem;font-weight:700}
+
+/* ── UPLOAD ZONE ── */
+#upload-zone{border:2px dashed var(--border2);border-radius:var(--r2);
+  padding:2.5rem 2rem;text-align:center;cursor:pointer;transition:all 0.25s;
+  background:linear-gradient(135deg,rgba(124,111,255,0.03),rgba(34,211,238,0.02))}
+#upload-zone:hover,#upload-zone.drag{border-color:var(--accent);background:rgba(124,111,255,0.06)}
+.upload-icon{font-size:2.5rem;margin-bottom:0.75rem}
+#upload-zone h3{font-size:1rem;font-weight:600;margin-bottom:0.35rem}
+#upload-zone p{font-size:0.8rem;color:var(--text2)}
+#file-input{display:none}
+
+/* ── INFO GRID ── */
+.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.625rem;margin-bottom:1.25rem}
+.info-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:0.875rem}
+.info-label{font-size:0.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.25rem}
+.info-value{font-size:0.9rem;font-weight:600;font-family:var(--mono)}
+
+/* ── PANELS ── */
+.tool-panel{display:none}
+.tool-panel.active{display:block}
+.panel-header{margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+.panel-header h2{font-size:1.15rem;font-weight:700;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.5rem}
+.panel-header p{font-size:0.8rem;color:var(--text2);line-height:1.6}
+
+/* ── FORMS ── */
+.form-group{margin-bottom:1rem}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:0.875rem}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem}
+.form-row-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0.75rem}
+label{display:block;font-size:0.72rem;font-weight:600;color:var(--text2);
+  margin-bottom:0.35rem;text-transform:uppercase;letter-spacing:0.06em}
+input[type=text],input[type=number],input[type=password],
+select,textarea{
+  width:100%;padding:0.625rem 0.875rem;background:var(--card);
+  border:1px solid var(--border);border-radius:8px;color:var(--text);
+  font-size:0.82rem;transition:border-color 0.15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(124,111,255,0.12)}
+input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;height:4px}
+input[type=color]{width:40px;height:32px;border:1px solid var(--border);border-radius:6px;
+  background:var(--card);cursor:pointer;padding:2px}
+textarea{resize:vertical;min-height:70px}
+.color-row{display:flex;gap:0.625rem;align-items:center}
+.color-row input[type=text]{flex:1}
+.range-row{display:flex;align-items:center;gap:0.75rem}
+.range-val{font-family:var(--mono);font-size:0.78rem;color:var(--accent2);min-width:38px;text-align:right}
+.check-row{display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.82rem;color:var(--text2)}
+.check-row input{accent-color:var(--accent);width:15px;height:15px}
+.radio-group{display:flex;gap:0.4rem;flex-wrap:wrap}
+.radio-opt{padding:0.38rem 0.75rem;border-radius:7px;border:1px solid var(--border);
+  font-size:0.75rem;cursor:pointer;transition:all 0.14s;color:var(--text2)}
+.radio-opt:hover,.radio-opt.selected{border-color:var(--accent);color:var(--accent);
+  background:rgba(124,111,255,0.1)}
+
+/* ── ACTION BAR ── */
+.action-bar{display:flex;gap:0.625rem;align-items:center;flex-wrap:wrap;
+  margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border)}
+
+/* ── RESULT BOX ── */
+.result-box{margin-top:1rem;background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;display:none}
+.result-box.show{display:block}
+.result-header{padding:0.75rem 1rem;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between}
+.result-header span{font-size:0.78rem;font-weight:600}
+.result-status{display:flex;align-items:center;gap:0.4rem;font-size:0.75rem}
+.dot{width:7px;height:7px;border-radius:50%}
+.dot.ok{background:var(--green)} .dot.err{background:var(--red)}
+.result-body{padding:0.875rem 1rem;font-family:var(--mono);font-size:0.73rem;
+  color:var(--text2);line-height:1.9;max-height:220px;overflow-y:auto;white-space:pre-wrap}
+.result-actions{padding:0.625rem 1rem;border-top:1px solid var(--border);display:flex;gap:0.4rem;flex-wrap:wrap}
+
+/* ── SLIDERS GRID ── */
+.sliders-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.875rem}
+.slider-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:0.875rem}
+.slider-card label{margin-bottom:0.625rem;display:flex;justify-content:space-between;align-items:center}
+
+/* ── OUTPUTS ── */
+.outputs-list{display:flex;flex-direction:column;gap:0.4rem;margin-top:0.875rem}
+.output-item{background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+  padding:0.625rem 0.875rem;display:flex;align-items:center;gap:0.75rem}
+.output-icon{font-size:1.25rem;flex-shrink:0}
+.output-name{flex:1;font-size:0.75rem;font-family:var(--mono);color:var(--text2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.output-size{font-size:0.68rem;color:var(--text3);flex-shrink:0}
+
+/* ── TAGS ── */
+.tag{display:inline-block;padding:0.2rem 0.55rem;border-radius:100px;font-size:0.68rem;
+  font-weight:600;margin:0.1rem}
+.tag-new{background:rgba(74,222,128,0.15);color:var(--green);border:1px solid rgba(74,222,128,0.3)}
+.tag-pro{background:rgba(251,146,60,0.15);color:var(--orange);border:1px solid rgba(251,146,60,0.3)}
+
+/* ── TOAST ── */
+#toast-container{position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;
+  display:flex;flex-direction:column;gap:0.5rem;pointer-events:none}
+.toast{background:var(--panel);border:1px solid var(--border2);border-radius:var(--r);
+  padding:0.7rem 1.1rem;font-size:0.78rem;box-shadow:var(--shadow);
+  animation:slideIn 0.3s ease;min-width:210px;max-width:340px;pointer-events:all}
+.toast.success{border-left:3px solid var(--green)}
+.toast.error{border-left:3px solid var(--red)}
+.toast.info{border-left:3px solid var(--cyan)}
+@keyframes slideIn{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+.toast.out{animation:slideOut 0.3s ease forwards}
+@keyframes slideOut{to{transform:translateX(110%);opacity:0}}
+
+/* ── NUP PREVIEW ── */
+.nup-preview{display:grid;gap:3px;border:1px solid var(--border2);border-radius:6px;
+  padding:6px;background:var(--card);width:100px;height:75px}
+.nup-cell{background:var(--panel);border:1px solid var(--border);border-radius:2px}
+
+/* ── PROGRESS ── */
+.progress-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:0.625rem}
+.progress-fill{height:100%;background:var(--grad);border-radius:2px;transition:width 0.4s;width:0}
+
+/* ── REGION BUILDER ── */
+.region-list{display:flex;flex-direction:column;gap:0.5rem;margin:0.5rem 0}
+.region-item{display:flex;align-items:center;gap:0.5rem;background:var(--card);
+  border:1px solid var(--border);border-radius:7px;padding:0.5rem 0.75rem;font-size:0.75rem}
+.region-item input{width:60px;padding:0.25rem 0.4rem;font-size:0.72rem}
+
+/* ── DIVIDER ── */
+.divider{height:1px;background:var(--border);margin:1.25rem 0}
+
+@media(max-width:900px){
+  .app{grid-template-columns:1fr}
+  .sidebar{display:none;position:fixed;left:0;top:58px;width:270px;height:calc(100vh - 58px);z-index:200}
+  .sidebar.open{display:block}
+  .form-row,.form-row-3,.form-row-4,.sliders-grid{grid-template-columns:1fr}
+  .info-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ── TOPBAR ── -->
+<header class="topbar">
+  <div class="logo">PDF <span>Forge</span> <small>v2</small></div>
+  <div class="topbar-file">
+    <div class="file-badge empty" id="active-file-badge">No PDF loaded — upload to begin</div>
+  </div>
+  <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">📂 Upload PDF</button>
+  <button class="btn btn-ghost btn-sm" onclick="loadOutputs();showPanel('outputs')">📁 Outputs</button>
+  <input type="file" id="file-input" accept=".pdf" onchange="handleUpload(this)"/>
+</header>
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar" id="sidebar">
+
+  <div class="nav-section">📂 File</div>
+  <div class="nav-item active" onclick="showPanel('upload')" data-panel="upload"><span class="nav-icon">📤</span>Upload & Info</div>
+  <div class="nav-item" onclick="showPanel('outputs');loadOutputs()" data-panel="outputs"><span class="nav-icon">📁</span>Output Files</div>
+
+  <div class="nav-section">🔍 Analyse</div>
+  <div class="nav-item" onclick="showPanel('extract_text')" data-panel="extract_text"><span class="nav-icon">📝</span>Extract Text</div>
+  <div class="nav-item" onclick="showPanel('extract_tables')" data-panel="extract_tables"><span class="nav-icon">📊</span>Extract Tables</div>
+  <div class="nav-item" onclick="showPanel('extract_images')" data-panel="extract_images"><span class="nav-icon">🖼️</span>Extract Images</div>
+  <div class="nav-item" onclick="showPanel('get_fonts')" data-panel="get_fonts"><span class="nav-icon">🔤</span>Font Analyser</div>
+  <div class="nav-item" onclick="showPanel('checksum')" data-panel="checksum"><span class="nav-icon">🔒</span>Checksum / Verify</div>
+
+  <div class="nav-section">✏️ Text & Annotate</div>
+  <div class="nav-item" onclick="showPanel('add_text')" data-panel="add_text"><span class="nav-icon">✏️</span>Add Text</div>
+  <div class="nav-item" onclick="showPanel('add_text_box')" data-panel="add_text_box"><span class="nav-icon">📦</span>Text Box</div>
+  <div class="nav-item" onclick="showPanel('highlight')" data-panel="highlight"><span class="nav-icon">🖍️</span>Highlight Region</div>
+  <div class="nav-item" onclick="showPanel('redact')" data-panel="redact"><span class="nav-icon">⬛</span>Redact / Black Out</div>
+  <div class="nav-item" onclick="showPanel('sticky_note')" data-panel="sticky_note"><span class="nav-icon">📌</span>Sticky Note</div>
+  <div class="nav-item" onclick="showPanel('add_line')" data-panel="add_line"><span class="nav-icon">📏</span>Line / Arrow</div>
+  <div class="nav-item" onclick="showPanel('add_shape')" data-panel="add_shape"><span class="nav-icon">🔷</span>Shapes</div>
+  <div class="nav-item" onclick="showPanel('signature_line')" data-panel="signature_line"><span class="nav-icon">✍️</span>Signature Line</div>
+  <div class="nav-item" onclick="showPanel('insert_image')" data-panel="insert_image"><span class="nav-icon">🖼️</span>Insert Image</div>
+
+  <div class="nav-section">📱 QR & Barcode</div>
+  <div class="nav-item" onclick="showPanel('add_qr')" data-panel="add_qr"><span class="nav-icon">▩</span>QR Code <span class="nav-count tag-new">NEW</span></div>
+  <div class="nav-item" onclick="showPanel('add_barcode')" data-panel="add_barcode"><span class="nav-icon">▐▌</span>Barcode <span class="nav-count tag-new">NEW</span></div>
+
+  <div class="nav-section">📄 Page Layout</div>
+  <div class="nav-item" onclick="showPanel('orientation')" data-panel="orientation"><span class="nav-icon">🔄</span>Orientation</div>
+  <div class="nav-item" onclick="showPanel('nup')" data-panel="nup"><span class="nav-icon">⊞</span>N-Up Layout</div>
+  <div class="nav-item" onclick="showPanel('resize')" data-panel="resize"><span class="nav-icon">📐</span>Resize Pages</div>
+  <div class="nav-item" onclick="showPanel('crop')" data-panel="crop"><span class="nav-icon">🔲</span>Crop Margins</div>
+  <div class="nav-item" onclick="showPanel('scale')" data-panel="scale"><span class="nav-icon">🔍</span>Scale Content <span class="nav-count tag-new">NEW</span></div>
+  <div class="nav-item" onclick="showPanel('mirror')" data-panel="mirror"><span class="nav-icon">🔀</span>Mirror / Flip <span class="nav-count tag-new">NEW</span></div>
+  <div class="nav-item" onclick="showPanel('add_blank')" data-panel="add_blank"><span class="nav-icon">➕</span>Add Blank Pages <span class="nav-count tag-new">NEW</span></div>
+  <div class="nav-item" onclick="showPanel('delete_pages')" data-panel="delete_pages"><span class="nav-icon">🗑️</span>Delete Pages</div>
+  <div class="nav-item" onclick="showPanel('reorder')" data-panel="reorder"><span class="nav-icon">↕️</span>Reorder Pages</div>
+  <div class="nav-item" onclick="showPanel('extract')" data-panel="extract"><span class="nav-icon">✂️</span>Extract Pages</div>
+  <div class="nav-item" onclick="showPanel('duplicate')" data-panel="duplicate"><span class="nav-icon">📑</span>Duplicate Page</div>
+  <div class="nav-item" onclick="showPanel('reverse')" data-panel="reverse"><span class="nav-icon">🔃</span>Reverse Pages <span class="nav-count tag-new">NEW</span></div>
+  <div class="nav-item" onclick="showPanel('booklet')" data-panel="booklet"><span class="nav-icon">📖</span>Booklet Layout <span class="nav-count tag-new">NEW</span></div>
+
+  <div class="nav-section">💧 Decor & Stamps</div>
+  <div class="nav-item" onclick="showPanel('watermark')" data-panel="watermark"><span class="nav-icon">💧</span>Text Watermark</div>
+  <div class="nav-item" onclick="showPanel('image_watermark')" data-panel="image_watermark"><span class="nav-icon">🖼️</span>Image Watermark <span class="nav-count tag-new">NEW</span></div>
+  <div class="nav-item" onclick="showPanel('stamp')" data-panel="stamp"><span class="nav-icon">🔖</span>Stamp</div>
+  <div class="nav-item" onclick="showPanel('header_footer')" data-panel="header_footer"><span class="nav-icon">📋</span>Header & Footer</div>
+  <div class="nav-item" onclick="showPanel('border')" data-panel="border"><span class="nav-icon">⬜</span>Add Border</div>
+
+  <div class="nav-section">🎨 Colour & Quality</div>
+  <div class="nav-item" onclick="showPanel('colour')" data-panel="colour"><span class="nav-icon">🎨</span>Colour Correction</div>
+  <div class="nav-item" onclick="showPanel('grayscale')" data-panel="grayscale"><span class="nav-icon">⬜</span>Grayscale <span class="nav-count tag-new">NEW</span></div>
+  <div class="nav-item" onclick="showPanel('blackwhite')" data-panel="blackwhite"><span class="nav-icon">◑</span>Black & White <span class="nav-count tag-new">NEW</span></div>
+  <div class="nav-item" onclick="showPanel('tint')" data-panel="tint"><span class="nav-icon">🌈</span>Colour Tint <span class="nav-count tag-new">NEW</span></div>
+  <div class="nav-item" onclick="showPanel('blur')" data-panel="blur"><span class="nav-icon">💨</span>Blur Pages <span class="nav-count tag-new">NEW</span></div>
+  <div class="nav-item" onclick="showPanel('sharpen')" data-panel="sharpen"><span class="nav-icon">🔆</span>Sharpen Pages <span class="nav-count tag-new">NEW</span></div>
+  <div class="nav-item" onclick="showPanel('deskew')" data-panel="deskew"><span class="nav-icon">📐</span>Auto-Deskew <span class="nav-count tag-new">NEW</span></div>
+  <div class="nav-item" onclick="showPanel('compress')" data-panel="compress"><span class="nav-icon">🗜️</span>Compress</div>
+  <div class="nav-item" onclick="showPanel('quality')" data-panel="quality"><span class="nav-icon">⬆️</span>Increase Quality</div>
+
+  <div class="nav-section">🔗 Combine & Split</div>
+  <div class="nav-item" onclick="showPanel('merge')" data-panel="merge"><span class="nav-icon">🔗</span>Merge PDFs</div>
+  <div class="nav-item" onclick="showPanel('split')" data-panel="split"><span class="nav-icon">✂️</span>Split PDF</div>
+  <div class="nav-item" onclick="showPanel('interleave')" data-panel="interleave"><span class="nav-icon">🔀</span>Interleave PDFs <span class="nav-count tag-new">NEW</span></div>
+
+  <div class="nav-section">🔐 Security</div>
+  <div class="nav-item" onclick="showPanel('encrypt')" data-panel="encrypt"><span class="nav-icon">🔐</span>Encrypt</div>
+  <div class="nav-item" onclick="showPanel('decrypt')" data-panel="decrypt"><span class="nav-icon">🔓</span>Decrypt</div>
+  <div class="nav-item" onclick="showPanel('metadata')" data-panel="metadata"><span class="nav-icon">🏷️</span>Edit Metadata</div>
+
+  <div class="nav-section">🔄 Convert</div>
+  <div class="nav-item" onclick="showPanel('to_images')" data-panel="to_images"><span class="nav-icon">🖼️</span>PDF → Images <span class="nav-count tag-new">NEW</span></div>
+  <div class="nav-item" onclick="showPanel('from_images')" data-panel="from_images"><span class="nav-icon">📄</span>Images → PDF <span class="nav-count tag-new">NEW</span></div>
+  <div class="nav-item" onclick="showPanel('from_text')" data-panel="from_text"><span class="nav-icon">📝</span>Text → PDF <span class="nav-count tag-new">NEW</span></div>
+
+</aside>
+
+<!-- ── MAIN ── -->
+<main class="main" id="main">
+
+<!-- UPLOAD / INFO -->
+<div class="tool-panel active" id="panel-upload">
+  <div id="upload-zone" onclick="document.getElementById('file-input').click()"
+       ondrop="dropFile(event)" ondragover="event.preventDefault();this.classList.add('drag')"
+       ondragleave="this.classList.remove('drag')">
+    <div class="upload-icon">📄</div>
+    <h3>Drop your PDF here or click to browse</h3>
+    <p>Max 200 MB · PDF files only · Everything runs locally</p>
+  </div>
+  <div id="file-info" class="hidden" style="margin-top:1.25rem">
+    <div class="info-grid" id="info-grid"></div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1rem">
+      <div style="font-size:0.65rem;color:var(--text3);margin-bottom:0.5rem;text-transform:uppercase;letter-spacing:0.1em">Full Metadata</div>
+      <pre id="info-json" style="font-family:var(--mono);font-size:0.72rem;color:var(--text2);line-height:1.9;white-space:pre-wrap"></pre>
+    </div>
+  </div>
+</div>
+
+<!-- OUTPUTS -->
+<div class="tool-panel" id="panel-outputs">
+  <div class="panel-header"><h2>📁 Output Files</h2><p>All processed files saved in <code style="color:var(--accent2);font-family:var(--mono)">output/</code></p></div>
+  <button class="btn btn-ghost btn-sm" onclick="loadOutputs()">🔄 Refresh</button>
+  <div class="outputs-list" id="outputs-list"><p style="color:var(--text3);font-size:0.82rem;margin-top:1rem">No outputs yet.</p></div>
+</div>
+
+<!-- EXTRACT TEXT -->
+<div class="tool-panel" id="panel-extract_text">
+  <div class="panel-header"><h2>📝 Extract Text</h2><p>Extract all text from PDF pages using layout-aware parsing. Saves to .txt file.</p></div>
+  <div class="form-group"><label>Pages</label><input type="text" id="et-pages" value="all" placeholder="all or 1,3,5 or 2-8"/></div>
+  <div class="action-bar"><button class="btn btn-cyan" onclick="runTool('extract_text',{path:activePath,page_spec:$('et-pages').value})">📝 Extract Text</button></div>
+  <div class="result-box" id="result-extract_text"></div>
+</div>
+
+<!-- EXTRACT TABLES -->
+<div class="tool-panel" id="panel-extract_tables">
+  <div class="panel-header"><h2>📊 Extract Tables</h2><p>Detect and extract tables from a page as a CSV file.</p></div>
+  <div class="form-group"><label>Page Number (0-based)</label><input type="number" id="etb-page" value="0" min="0"/></div>
+  <div class="action-bar"><button class="btn btn-cyan" onclick="runTool('extract_tables',{path:activePath,page_num:+$('etb-page').value})">📊 Extract Tables</button></div>
+  <div class="result-box" id="result-extract_tables"></div>
+</div>
+
+<!-- EXTRACT IMAGES -->
+<div class="tool-panel" id="panel-extract_images">
+  <div class="panel-header"><h2>🖼️ Extract Images</h2><p>Pull all embedded images out of the PDF as separate files.</p></div>
+  <div class="form-row">
+    <div class="form-group"><label>Output Format</label>
+      <div class="radio-group" id="ei-fmt"><div class="radio-opt selected" data-val="PNG" onclick="selectRadio('ei-fmt',this)">PNG</div><div class="radio-opt" data-val="JPEG" onclick="selectRadio('ei-fmt',this)">JPEG</div><div class="radio-opt" data-val="TIFF" onclick="selectRadio('ei-fmt',this)">TIFF</div><div class="radio-opt" data-val="WEBP" onclick="selectRadio('ei-fmt',this)">WEBP</div></div>
+    </div>
+    <div class="form-group"><label>Min Size (KB, skip smaller)</label><input type="number" id="ei-minsize" value="1" min="0"/></div>
+  </div>
+  <div class="action-bar"><button class="btn btn-cyan" onclick="runTool('extract_images',{path:activePath,output_format:getRadio('ei-fmt'),min_size_kb:+$('ei-minsize').value})">🖼️ Extract Images</button></div>
+  <div class="result-box" id="result-extract_images"></div>
+</div>
+
+<!-- FONT ANALYSER -->
+<div class="tool-panel" id="panel-get_fonts">
+  <div class="panel-header"><h2>🔤 Font Analyser</h2><p>List all fonts embedded or referenced in the PDF, per page.</p></div>
+  <div class="action-bar"><button class="btn btn-cyan" onclick="runTool('get_fonts',{path:activePath})">🔤 Analyse Fonts</button></div>
+  <div class="result-box" id="result-get_fonts"></div>
+</div>
+
+<!-- CHECKSUM -->
+<div class="tool-panel" id="panel-checksum">
+  <div class="panel-header"><h2>🔒 Checksum / Integrity</h2><p>Compute SHA-256 hash of the PDF for tamper detection and integrity verification.</p></div>
+  <div class="action-bar"><button class="btn btn-ghost" onclick="runTool('checksum',{path:activePath})">🔒 Compute SHA-256</button></div>
+  <div class="result-box" id="result-checksum"></div>
+</div>
+
+<!-- ADD TEXT -->
+<div class="tool-panel" id="panel-add_text">
+  <div class="panel-header"><h2>✏️ Add Text</h2><p>Insert text at any coordinates. Auto-Detect reads the existing font size and style from the page content stream.</p></div>
+  <div class="form-group"><label>Text Content</label><textarea id="t-text" placeholder="Enter text&#10;Supports multiple lines">Sample Text</textarea></div>
+  <div class="form-row">
+    <div class="form-group"><label>Page (0-based)</label><input type="number" id="t-page" value="0" min="0"/></div>
+    <div class="form-group"><label>Font Size (pt)</label><input type="number" id="t-size" value="12" min="4" max="200"/></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>X Position (pt)</label><input type="number" id="t-x" value="100"/></div>
+    <div class="form-group"><label>Y from Top (pt)</label><input type="number" id="t-y" value="100"/></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>Font</label><select id="t-font"><option>Helvetica</option><option>Helvetica-Bold</option><option>Helvetica-Oblique</option><option>Times-Roman</option><option>Times-Bold</option><option>Times-Italic</option><option>Courier</option><option>Courier-Bold</option></select></div>
+    <div class="form-group"><label>Colour</label><div class="color-row"><input type="color" id="t-color" value="#000000" oninput="$('t-color-hex').value=this.value"/><input type="text" id="t-color-hex" value="#000000" oninput="syncColorPicker('t-color','t-color-hex')"/></div></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>Opacity</label><div class="range-row"><input type="range" id="t-opacity" min="0" max="1" step="0.05" value="1" oninput="$('t-opacity-v').textContent=this.value"/><span class="range-val" id="t-opacity-v">1</span></div></div>
+    <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:0.25rem"><label class="check-row"><input type="checkbox" id="t-autodetect" checked/><span>Auto-detect font from page</span></label></div>
+  </div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('add_text',{path:activePath,text:$('t-text').value,page_num:+$('t-page').value,x:+$('t-x').value,y:+$('t-y').value,font:$('t-font').value,font_size:+$('t-size').value,color_hex:$('t-color-hex').value,auto_detect:$('t-autodetect').checked,opacity:+$('t-opacity').value})">✏️ Add Text</button></div>
+  <div class="result-box" id="result-add_text"></div>
+</div>
+
+<!-- TEXT BOX -->
+<div class="tool-panel" id="panel-add_text_box">
+  <div class="panel-header"><h2>📦 Text Box</h2><p>Add a styled text box with background fill, border, and padding.</p></div>
+  <div class="form-group"><label>Content</label><textarea id="tb-text" rows="3">Text box content here</textarea></div>
+  <div class="form-row">
+    <div class="form-group"><label>Page (0-based)</label><input type="number" id="tb-page" value="0" min="0"/></div>
+    <div class="form-group"><label>Font Size</label><input type="number" id="tb-size" value="11" min="6" max="72"/></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>X</label><input type="number" id="tb-x" value="100"/></div>
+    <div class="form-group"><label>Y from Top</label><input type="number" id="tb-y" value="100"/></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>Width (pt)</label><input type="number" id="tb-w" value="200"/></div>
+    <div class="form-group"><label>Height (pt)</label><input type="number" id="tb-h" value="100"/></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>Background</label><div class="color-row"><input type="color" id="tb-bg" value="#FFFDE7" oninput="$('tb-bg-hex').value=this.value"/><input type="text" id="tb-bg-hex" value="#FFFDE7"/></div></div>
+    <div class="form-group"><label>Border</label><div class="color-row"><input type="color" id="tb-border" value="#F59E0B" oninput="$('tb-border-hex').value=this.value"/><input type="text" id="tb-border-hex" value="#F59E0B"/></div></div>
+  </div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('add_text_box',{path:activePath,text:$('tb-text').value,page_num:+$('tb-page').value,x:+$('tb-x').value,y:+$('tb-y').value,width:+$('tb-w').value,height:+$('tb-h').value,font_size:+$('tb-size').value,bg_color:$('tb-bg-hex').value,border_color:$('tb-border-hex').value})">📦 Add Text Box</button></div>
+  <div class="result-box" id="result-add_text_box"></div>
+</div>
+
+<!-- HIGHLIGHT -->
+<div class="tool-panel" id="panel-highlight">
+  <div class="panel-header"><h2>🖍️ Highlight Region</h2><p>Draw a semi-transparent highlight over any rectangular area on a page.</p></div>
+  <div class="form-row"><div class="form-group"><label>Page (0-based)</label><input type="number" id="hl-page" value="0" min="0"/></div><div class="form-group"><label>Opacity</label><div class="range-row"><input type="range" id="hl-opacity" min="0.05" max="0.8" step="0.05" value="0.4" oninput="$('hl-op-v').textContent=this.value"/><span class="range-val" id="hl-op-v">0.4</span></div></div></div>
+  <div class="form-row-4">
+    <div class="form-group"><label>X (pt)</label><input type="number" id="hl-x" value="50"/></div>
+    <div class="form-group"><label>Y from Top</label><input type="number" id="hl-y" value="100"/></div>
+    <div class="form-group"><label>Width</label><input type="number" id="hl-w" value="300"/></div>
+    <div class="form-group"><label>Height</label><input type="number" id="hl-h" value="20"/></div>
+  </div>
+  <div class="form-group"><label>Highlight Colour</label><div class="color-row"><input type="color" id="hl-color" value="#FFFF00" oninput="$('hl-color-hex').value=this.value"/><input type="text" id="hl-color-hex" value="#FFFF00"/></div></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('highlight',{path:activePath,page_num:+$('hl-page').value,x:+$('hl-x').value,y:+$('hl-y').value,width:+$('hl-w').value,height:+$('hl-h').value,color_hex:$('hl-color-hex').value,opacity:+$('hl-opacity').value})">🖍️ Highlight</button></div>
+  <div class="result-box" id="result-highlight"></div>
+</div>
+
+<!-- REDACT -->
+<div class="tool-panel" id="panel-redact">
+  <div class="panel-header"><h2>⬛ Redact / Black Out</h2><p>Permanently black out sensitive regions. Add multiple regions below.</p></div>
+  <div class="form-row"><div class="form-group"><label>Page (0-based)</label><input type="number" id="rd-page" value="0" min="0"/></div><div class="form-group"><label>Fill Colour</label><div class="color-row"><input type="color" id="rd-color" value="#000000" oninput="$('rd-color-hex').value=this.value"/><input type="text" id="rd-color-hex" value="#000000"/></div></div></div>
+  <label>Regions to Redact (x, y-from-top, width, height in pt)</label>
+  <div class="region-list" id="rd-regions">
+    <div class="region-item">X:<input type="number" value="100"/> Y:<input type="number" value="100"/> W:<input type="number" value="200"/> H:<input type="number" value="25"/><button onclick="this.parentElement.remove()" style="color:var(--red);font-size:1rem;margin-left:auto">✕</button></div>
+  </div>
+  <button class="btn btn-ghost btn-sm" style="margin-top:0.5rem" onclick="addRegionRow()">+ Add Region</button>
+  <div class="action-bar"><button class="btn btn-danger" onclick="runRedact()">⬛ Apply Redaction</button></div>
+  <div class="result-box" id="result-redact"></div>
+</div>
+
+<!-- STICKY NOTE -->
+<div class="tool-panel" id="panel-sticky_note">
+  <div class="panel-header"><h2>📌 Sticky Note</h2><p>Add a visible sticky note annotation with title and coloured background.</p></div>
+  <div class="form-row"><div class="form-group"><label>Title</label><input type="text" id="sn-title" value="Note"/></div><div class="form-group"><label>Page (0-based)</label><input type="number" id="sn-page" value="0" min="0"/></div></div>
+  <div class="form-group"><label>Content</label><textarea id="sn-content" rows="3">Write your note here...</textarea></div>
+  <div class="form-row">
+    <div class="form-group"><label>X</label><input type="number" id="sn-x" value="100"/></div>
+    <div class="form-group"><label>Y from Top</label><input type="number" id="sn-y" value="100"/></div>
+  </div>
+  <div class="form-group"><label>Note Colour</label><div class="color-row"><input type="color" id="sn-color" value="#FFD700" oninput="$('sn-color-hex').value=this.value"/><input type="text" id="sn-color-hex" value="#FFD700"/></div></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('sticky_note',{path:activePath,page_num:+$('sn-page').value,x:+$('sn-x').value,y:+$('sn-y').value,title:$('sn-title').value,content:$('sn-content').value,color_hex:$('sn-color-hex').value})">📌 Add Note</button></div>
+  <div class="result-box" id="result-sticky_note"></div>
+</div>
+
+<!-- LINE / ARROW -->
+<div class="tool-panel" id="panel-add_line">
+  <div class="panel-header"><h2>📏 Line / Arrow</h2><p>Draw a straight line or arrow between two points on a page.</p></div>
+  <div class="form-row-4">
+    <div class="form-group"><label>X1 (pt)</label><input type="number" id="ln-x1" value="80"/></div>
+    <div class="form-group"><label>Y1 from Top</label><input type="number" id="ln-y1" value="200"/></div>
+    <div class="form-group"><label>X2 (pt)</label><input type="number" id="ln-x2" value="400"/></div>
+    <div class="form-group"><label>Y2 from Top</label><input type="number" id="ln-y2" value="200"/></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>Page (0-based)</label><input type="number" id="ln-page" value="0" min="0"/></div>
+    <div class="form-group"><label>Line Width</label><input type="number" id="ln-width" value="2" min="1" max="20"/></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>Colour</label><div class="color-row"><input type="color" id="ln-color" value="#FF0000" oninput="$('ln-color-hex').value=this.value"/><input type="text" id="ln-color-hex" value="#FF0000"/></div></div>
+    <div class="form-group"><label>Style</label><div class="radio-group" id="ln-style"><div class="radio-opt selected" data-val="solid" onclick="selectRadio('ln-style',this)">Solid</div><div class="radio-opt" data-val="dashed" onclick="selectRadio('ln-style',this)">Dashed</div><div class="radio-opt" data-val="dotted" onclick="selectRadio('ln-style',this)">Dotted</div></div></div>
+  </div>
+  <div class="form-group"><label class="check-row"><input type="checkbox" id="ln-arrow" checked/><span>Add arrowhead at end</span></label></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('add_line',{path:activePath,page_num:+$('ln-page').value,x1:+$('ln-x1').value,y1:+$('ln-y1').value,x2:+$('ln-x2').value,y2:+$('ln-y2').value,color_hex:$('ln-color-hex').value,line_width:+$('ln-width').value,style:getRadio('ln-style'),arrow:$('ln-arrow').checked})">📏 Draw Line</button></div>
+  <div class="result-box" id="result-add_line"></div>
+</div>
+
+<!-- SHAPES -->
+<div class="tool-panel" id="panel-add_shape">
+  <div class="panel-header"><h2>🔷 Shapes</h2><p>Add rectangles, circles, ellipses, rounded rectangles, or triangles.</p></div>
+  <div class="form-group"><label>Shape</label><div class="radio-group" id="sh-type"><div class="radio-opt selected" data-val="rectangle" onclick="selectRadio('sh-type',this)">Rectangle</div><div class="radio-opt" data-val="rounded_rect" onclick="selectRadio('sh-type',this)">Rounded</div><div class="radio-opt" data-val="circle" onclick="selectRadio('sh-type',this)">Circle</div><div class="radio-opt" data-val="ellipse" onclick="selectRadio('sh-type',this)">Ellipse</div><div class="radio-opt" data-val="triangle" onclick="selectRadio('sh-type',this)">Triangle</div></div></div>
+  <div class="form-row-4">
+    <div class="form-group"><label>X</label><input type="number" id="sh-x" value="100"/></div>
+    <div class="form-group"><label>Y from Top</label><input type="number" id="sh-y" value="100"/></div>
+    <div class="form-group"><label>Width</label><input type="number" id="sh-w" value="150"/></div>
+    <div class="form-group"><label>Height</label><input type="number" id="sh-h" value="80"/></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>Fill</label><div class="color-row"><input type="color" id="sh-fill" value="#E0E7FF" oninput="$('sh-fill-hex').value=this.value"/><input type="text" id="sh-fill-hex" value="#E0E7FF"/></div></div>
+    <div class="form-group"><label>Stroke</label><div class="color-row"><input type="color" id="sh-stroke" value="#4F46E5" oninput="$('sh-stroke-hex').value=this.value"/><input type="text" id="sh-stroke-hex" value="#4F46E5"/></div></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>Line Width</label><input type="number" id="sh-lw" value="2" min="0" max="20"/></div>
+    <div class="form-group"><label>Opacity</label><div class="range-row"><input type="range" id="sh-op" min="0.05" max="1" step="0.05" value="0.9" oninput="$('sh-op-v').textContent=this.value"/><span class="range-val" id="sh-op-v">0.9</span></div></div>
+  </div>
+  <div class="form-group"><label>Page (0-based)</label><input type="number" id="sh-page" value="0" min="0"/></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('add_shape',{path:activePath,page_num:+$('sh-page').value,shape:getRadio('sh-type'),x:+$('sh-x').value,y:+$('sh-y').value,width:+$('sh-w').value,height:+$('sh-h').value,fill_color:$('sh-fill-hex').value,stroke_color:$('sh-stroke-hex').value,line_width:+$('sh-lw').value,opacity:+$('sh-op').value})">🔷 Add Shape</button></div>
+  <div class="result-box" id="result-add_shape"></div>
+</div>
+
+<!-- QR CODE -->
+<div class="tool-panel" id="panel-add_qr">
+  <div class="panel-header"><h2>▩ QR Code <span class="tag tag-new">NEW</span></h2><p>Generate a QR code (URL, text, contact, etc.) and embed it on any page.</p></div>
+  <div class="form-group"><label>QR Data (URL, text, vCard…)</label><input type="text" id="qr-data" value="https://example.com" placeholder="https://... or any text"/></div>
+  <div class="form-row">
+    <div class="form-group"><label>Page (0-based)</label><input type="number" id="qr-page" value="0" min="0"/></div>
+    <div class="form-group"><label>Size (pt)</label><input type="number" id="qr-size" value="80" min="30" max="400"/></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>X</label><input type="number" id="qr-x" value="50"/></div>
+    <div class="form-group"><label>Y from Top</label><input type="number" id="qr-y" value="50"/></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>QR Colour</label><div class="color-row"><input type="color" id="qr-color" value="#000000" oninput="$('qr-color-hex').value=this.value"/><input type="text" id="qr-color-hex" value="#000000"/></div></div>
+    <div class="form-group"><label>Background</label><div class="color-row"><input type="color" id="qr-bg" value="#FFFFFF" oninput="$('qr-bg-hex').value=this.value"/><input type="text" id="qr-bg-hex" value="#FFFFFF"/></div></div>
+  </div>
+  <div class="form-group"><label>Error Correction</label><div class="radio-group" id="qr-ec"><div class="radio-opt" data-val="L" onclick="selectRadio('qr-ec',this)">L (7%)</div><div class="radio-opt selected" data-val="M" onclick="selectRadio('qr-ec',this)">M (15%)</div><div class="radio-opt" data-val="Q" onclick="selectRadio('qr-ec',this)">Q (25%)</div><div class="radio-opt" data-val="H" onclick="selectRadio('qr-ec',this)">H (30%)</div></div></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('add_qr',{path:activePath,data:$('qr-data').value,page_num:+$('qr-page').value,x:+$('qr-x').value,y:+$('qr-y').value,size:+$('qr-size').value,qr_color:$('qr-color-hex').value,bg_color:$('qr-bg-hex').value,error_correction:getRadio('qr-ec')})">▩ Add QR Code</button></div>
+  <div class="result-box" id="result-add_qr"></div>
+</div>
+
+<!-- BARCODE -->
+<div class="tool-panel" id="panel-add_barcode">
+  <div class="panel-header"><h2>▐▌ Barcode <span class="tag tag-new">NEW</span></h2><p>Embed a 1D barcode (Code128, EAN-13, EAN-8, UPC-A, ISBN) on a page.</p></div>
+  <div class="form-group"><label>Barcode Data</label><input type="text" id="bc-data" value="123456789012" placeholder="Numeric or alphanumeric data"/></div>
+  <div class="form-group"><label>Barcode Type</label><div class="radio-group" id="bc-type"><div class="radio-opt selected" data-val="code128" onclick="selectRadio('bc-type',this)">Code 128</div><div class="radio-opt" data-val="ean13" onclick="selectRadio('bc-type',this)">EAN-13</div><div class="radio-opt" data-val="ean8" onclick="selectRadio('bc-type',this)">EAN-8</div><div class="radio-opt" data-val="upca" onclick="selectRadio('bc-type',this)">UPC-A</div><div class="radio-opt" data-val="isbn13" onclick="selectRadio('bc-type',this)">ISBN-13</div></div></div>
+  <div class="form-row">
+    <div class="form-group"><label>Page (0-based)</label><input type="number" id="bc-page" value="0" min="0"/></div>
+    <div class="form-group"><label>Width (pt)</label><input type="number" id="bc-w" value="180"/></div>
+  </div>
+  <div class="form-row">
+    <div class="form-group"><label>X</label><input type="number" id="bc-x" value="100"/></div>
+    <div class="form-group"><label>Y from Top</label><input type="number" id="bc-y" value="100"/></div>
+  </div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('add_barcode',{path:activePath,data:$('bc-data').value,barcode_type:getRadio('bc-type'),page_num:+$('bc-page').value,x:+$('bc-x').value,y:+$('bc-y').value,width:+$('bc-w').value})">▐▌ Add Barcode</button></div>
+  <div class="result-box" id="result-add_barcode"></div>
+</div>
+
+<!-- SIGNATURE LINE -->
+<div class="tool-panel" id="panel-signature_line">
+  <div class="panel-header"><h2>✍️ Signature Line</h2><p>Add a professional signature underline with label and optional date field.</p></div>
+  <div class="form-row"><div class="form-group"><label>Page (0-based)</label><input type="number" id="sig-page" value="0" min="0"/></div><div class="form-group"><label>Label</label><input type="text" id="sig-label" value="Signature"/></div></div>
+  <div class="form-row"><div class="form-group"><label>X</label><input type="number" id="sig-x" value="100"/></div><div class="form-group"><label>Y from Top</label><input type="number" id="sig-y" value="700"/></div></div>
+  <div class="form-row"><div class="form-group"><label>Line Width (pt)</label><input type="number" id="sig-w" value="200"/></div><div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:0.25rem"><label class="check-row"><input type="checkbox" id="sig-date" checked/><span>Include Date field</span></label></div></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('signature_line',{path:activePath,page_num:+$('sig-page').value,x:+$('sig-x').value,y:+$('sig-y').value,width:+$('sig-w').value,label:$('sig-label').value,date_line:$('sig-date').checked})">✍️ Add Signature Line</button></div>
+  <div class="result-box" id="result-signature_line"></div>
+</div>
+
+<!-- INSERT IMAGE -->
+<div class="tool-panel" id="panel-insert_image">
+  <div class="panel-header"><h2>🖼️ Insert Image</h2><p>Embed a PNG/JPEG image at any position on any page.</p></div>
+  <div class="form-group"><label>Image File Path (absolute)</label><input type="text" id="img-path" placeholder="/path/to/logo.png"/></div>
+  <div class="form-row"><div class="form-group"><label>Page (0-based)</label><input type="number" id="img-page" value="0" min="0"/></div><div class="form-group"><label>Width (pt)</label><input type="number" id="img-w" value="150"/></div></div>
+  <div class="form-row"><div class="form-group"><label>X</label><input type="number" id="img-x" value="100"/></div><div class="form-group"><label>Y from Top</label><input type="number" id="img-y" value="100"/></div></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('insert_image',{path:activePath,image_path:$('img-path').value,page_num:+$('img-page').value,x:+$('img-x').value,y:+$('img-y').value,width:+$('img-w').value})">🖼️ Insert</button></div>
+  <div class="result-box" id="result-insert_image"></div>
+</div>
+
+<!-- ORIENTATION -->
+<div class="tool-panel" id="panel-orientation">
+  <div class="panel-header"><h2>🔄 Page Orientation</h2><p>Switch portrait/landscape or rotate specific pages.</p></div>
+  <div class="form-group"><label>Mode</label><div class="radio-group" id="ori-mode"><div class="radio-opt selected" data-val="landscape" onclick="selectRadio('ori-mode',this)">🖼️ Landscape</div><div class="radio-opt" data-val="portrait" onclick="selectRadio('ori-mode',this)">📄 Portrait</div><div class="radio-opt" data-val="rotate90" onclick="selectRadio('ori-mode',this)">↻ 90°</div><div class="radio-opt" data-val="rotate180" onclick="selectRadio('ori-mode',this)">↻ 180°</div><div class="radio-opt" data-val="rotate270" onclick="selectRadio('ori-mode',this)">↻ 270°</div></div></div>
+  <div class="form-group"><label>Pages</label><input type="text" id="ori-pages" value="all" placeholder="all · 1,3 · 2-8"/></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('orientation',{path:activePath,mode:getRadio('ori-mode'),pages:$('ori-pages').value})">🔄 Apply</button></div>
+  <div class="result-box" id="result-orientation"></div>
+</div>
+
+<!-- NUP -->
+<div class="tool-panel" id="panel-nup">
+  <div class="panel-header"><h2>⊞ N-Up Layout</h2><p>Place 2, 4, 6 or 9 pages onto a single output page — ideal for booklets and handouts.</p></div>
+  <div class="form-row">
+    <div class="form-group"><label>Pages Per Sheet</label>
+      <div class="radio-group" id="nup-n"><div class="radio-opt selected" data-val="2" onclick="selectRadio('nup-n',this);updateNupPreview(2)">2-Up</div><div class="radio-opt" data-val="4" onclick="selectRadio('nup-n',this);updateNupPreview(4)">4-Up</div><div class="radio-opt" data-val="6" onclick="selectRadio('nup-n',this);updateNupPreview(6)">6-Up</div><div class="radio-opt" data-val="9" onclick="selectRadio('nup-n',this);updateNupPreview(9)">9-Up</div></div>
+      <div class="nup-preview" id="nup-preview" style="margin-top:0.5rem;grid-template-columns:1fr 1fr"><div class="nup-cell"></div><div class="nup-cell"></div></div>
+    </div>
+    <div><div class="form-group"><label>Output Paper</label><select id="nup-paper"><option>A4</option><option>A3</option><option>Letter</option><option>Legal</option></select></div><div class="form-group"><label>Orientation</label><div class="radio-group" id="nup-ori"><div class="radio-opt selected" data-val="portrait" onclick="selectRadio('nup-ori',this)">Portrait</div><div class="radio-opt" data-val="landscape" onclick="selectRadio('nup-ori',this)">Landscape</div></div></div></div>
+  </div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('nup',{path:activePath,n:+getRadio('nup-n'),paper:$('nup-paper').value,orientation:getRadio('nup-ori')})">⊞ Create N-Up</button></div>
+  <div class="result-box" id="result-nup"></div>
+</div>
+
+<!-- SCALE CONTENT -->
+<div class="tool-panel" id="panel-scale">
+  <div class="panel-header"><h2>🔍 Scale Content <span class="tag tag-new">NEW</span></h2><p>Scale the content (not just paper) of pages — stretch or shrink the actual content.</p></div>
+  <div class="form-row"><div class="form-group"><label>Scale X</label><div class="range-row"><input type="range" id="sc-x" min="0.1" max="3" step="0.05" value="1" oninput="$('sc-xv').textContent=this.value"/><span class="range-val" id="sc-xv">1</span></div></div><div class="form-group"><label>Scale Y</label><div class="range-row"><input type="range" id="sc-y" min="0.1" max="3" step="0.05" value="1" oninput="$('sc-yv').textContent=this.value"/><span class="range-val" id="sc-yv">1</span></div></div></div>
+  <div class="form-group"><label>Pages</label><input type="text" id="sc-pages" value="all"/></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('scale',{path:activePath,scale_x:+$('sc-x').value,scale_y:+$('sc-y').value,pages:$('sc-pages').value})">🔍 Scale</button></div>
+  <div class="result-box" id="result-scale"></div>
+</div>
+
+<!-- MIRROR -->
+<div class="tool-panel" id="panel-mirror">
+  <div class="panel-header"><h2>🔀 Mirror / Flip <span class="tag tag-new">NEW</span></h2><p>Horizontally or vertically mirror page content.</p></div>
+  <div class="form-row"><div class="form-group"><label>Axis</label><div class="radio-group" id="mir-axis"><div class="radio-opt selected" data-val="horizontal" onclick="selectRadio('mir-axis',this)">↔ Horizontal</div><div class="radio-opt" data-val="vertical" onclick="selectRadio('mir-axis',this)">↕ Vertical</div></div></div><div class="form-group"><label>Pages</label><input type="text" id="mir-pages" value="all"/></div></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('mirror',{path:activePath,axis:getRadio('mir-axis'),pages:$('mir-pages').value})">🔀 Mirror</button></div>
+  <div class="result-box" id="result-mirror"></div>
+</div>
+
+<!-- ADD BLANK PAGES -->
+<div class="tool-panel" id="panel-add_blank">
+  <div class="panel-header"><h2>➕ Add Blank Pages <span class="tag tag-new">NEW</span></h2><p>Insert blank pages at the start, end, or after a specific page.</p></div>
+  <div class="form-row"><div class="form-group"><label>Number of Blank Pages</label><input type="number" id="ab-count" value="1" min="1" max="50"/></div><div class="form-group"><label>Position</label><div class="radio-group" id="ab-pos"><div class="radio-opt selected" data-val="end" onclick="selectRadio('ab-pos',this)">End</div><div class="radio-opt" data-val="start" onclick="selectRadio('ab-pos',this)">Start</div><div class="radio-opt" data-val="after" onclick="selectRadio('ab-pos',this)">After Page</div></div></div></div>
+  <div class="form-group"><label>After Page Number (if "After Page")</label><input type="number" id="ab-after" value="1" min="1"/></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('add_blank',{path:activePath,count:+$('ab-count').value,position:getRadio('ab-pos'),after_page:+$('ab-after').value})">➕ Add Blanks</button></div>
+  <div class="result-box" id="result-add_blank"></div>
+</div>
+
+<!-- DELETE PAGES -->
+<div class="tool-panel" id="panel-delete_pages">
+  <div class="panel-header"><h2>🗑️ Delete Pages</h2><p>Remove pages permanently. Uses 1-based page numbers.</p></div>
+  <div class="form-group"><label>Pages to Delete</label><input type="text" id="del-pages" value="1" placeholder="1 · 1,3,5 · 2-6"/></div>
+  <div class="action-bar"><button class="btn btn-danger" onclick="runTool('delete_pages',{path:activePath,pages_to_delete:$('del-pages').value})">🗑️ Delete</button></div>
+  <div class="result-box" id="result-delete_pages"></div>
+</div>
+
+<!-- REORDER -->
+<div class="tool-panel" id="panel-reorder">
+  <div class="panel-header"><h2>↕️ Reorder Pages</h2><p>Specify the new order as 0-based indices (e.g. 2,0,1 to put page 3 first).</p></div>
+  <div class="form-group"><label>New Order (0-based, comma-separated)</label><input type="text" id="ro-order" placeholder="e.g. 2,0,1"/></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('reorder',{path:activePath,order:$('ro-order').value.split(',').map(Number)})">↕️ Reorder</button></div>
+  <div class="result-box" id="result-reorder"></div>
+</div>
+
+<!-- EXTRACT PAGES -->
+<div class="tool-panel" id="panel-extract">
+  <div class="panel-header"><h2>✂️ Extract Pages</h2><p>Save a subset of pages as a new PDF.</p></div>
+  <div class="form-group"><label>Pages to Extract</label><input type="text" id="ex-pages" value="1-3" placeholder="1 · 1,3,5 · 2-8"/></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('extract',{path:activePath,pages:$('ex-pages').value})">✂️ Extract</button></div>
+  <div class="result-box" id="result-extract"></div>
+</div>
+
+<!-- DUPLICATE PAGE -->
+<div class="tool-panel" id="panel-duplicate">
+  <div class="panel-header"><h2>📑 Duplicate Page</h2><p>Copy a page multiple times.</p></div>
+  <div class="form-row"><div class="form-group"><label>Page (0-based)</label><input type="number" id="dup-page" value="0" min="0"/></div><div class="form-group"><label>Total Copies</label><input type="number" id="dup-times" value="2" min="2" max="20"/></div></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('duplicate',{path:activePath,page_num:+$('dup-page').value,times:+$('dup-times').value})">📑 Duplicate</button></div>
+  <div class="result-box" id="result-duplicate"></div>
+</div>
+
+<!-- RESIZE -->
+<div class="tool-panel" id="panel-resize">
+  <div class="panel-header"><h2>📐 Resize Pages</h2><p>Convert all pages to a standard or custom paper size.</p></div>
+  <div class="form-row"><div class="form-group"><label>Target Size</label><select id="rs-paper" onchange="$('rs-custom').style.display=this.value==='Custom'?'grid':'none'"><option>A4</option><option>A3</option><option>A5</option><option>Letter</option><option>Legal</option><option>B5</option><option>Executive</option><option>Custom</option></select></div><div class="form-group"><label>Orientation</label><div class="radio-group" id="rs-ori"><div class="radio-opt selected" data-val="portrait" onclick="selectRadio('rs-ori',this)">Portrait</div><div class="radio-opt" data-val="landscape" onclick="selectRadio('rs-ori',this)">Landscape</div></div></div></div>
+  <div class="form-row" id="rs-custom" style="display:none"><div class="form-group"><label>Width (mm)</label><input type="number" id="rs-w" value="210"/></div><div class="form-group"><label>Height (mm)</label><input type="number" id="rs-h" value="297"/></div></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('resize',{path:activePath,paper:$('rs-paper').value,orientation:getRadio('rs-ori'),custom_w_mm:+$('rs-w').value,custom_h_mm:+$('rs-h').value})">📐 Resize</button></div>
+  <div class="result-box" id="result-resize"></div>
+</div>
+
+<!-- CROP -->
+<div class="tool-panel" id="panel-crop">
+  <div class="panel-header"><h2>🔲 Crop Margins</h2><p>Trim margins in points (72 pt = 1 inch). Positive = crop inward.</p></div>
+  <div class="form-row-4"><div class="form-group"><label>Left</label><input type="number" id="cr-left" value="0" min="0"/></div><div class="form-group"><label>Right</label><input type="number" id="cr-right" value="0" min="0"/></div><div class="form-group"><label>Top</label><input type="number" id="cr-top" value="0" min="0"/></div><div class="form-group"><label>Bottom</label><input type="number" id="cr-bottom" value="0" min="0"/></div></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('crop',{path:activePath,left:+$('cr-left').value,right:+$('cr-right').value,top:+$('cr-top').value,bottom:+$('cr-bottom').value})">🔲 Crop</button></div>
+  <div class="result-box" id="result-crop"></div>
+</div>
+
+<!-- REVERSE -->
+<div class="tool-panel" id="panel-reverse">
+  <div class="panel-header"><h2>🔃 Reverse Pages <span class="tag tag-new">NEW</span></h2><p>Flip the page order so the last page becomes the first.</p></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('reverse',{path:activePath})">🔃 Reverse</button></div>
+  <div class="result-box" id="result-reverse"></div>
+</div>
+
+<!-- BOOKLET -->
+<div class="tool-panel" id="panel-booklet">
+  <div class="panel-header"><h2>📖 Booklet Layout <span class="tag tag-new">NEW</span></h2><p>Rearrange pages in saddle-stitch booklet order. Print double-sided, fold, and staple.</p></div>
+  <div class="form-group"><label>Paper Size</label><div class="radio-group" id="bk-paper"><div class="radio-opt selected" data-val="A4" onclick="selectRadio('bk-paper',this)">A4</div><div class="radio-opt" data-val="A3" onclick="selectRadio('bk-paper',this)">A3</div><div class="radio-opt" data-val="Letter" onclick="selectRadio('bk-paper',this)">Letter</div></div></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('booklet',{path:activePath,paper:getRadio('bk-paper')})">📖 Create Booklet</button></div>
+  <div class="result-box" id="result-booklet"></div>
+</div>
+
+<!-- WATERMARK -->
+<div class="tool-panel" id="panel-watermark">
+  <div class="panel-header"><h2>💧 Text Watermark</h2><p>Overlay a diagonal or positioned text watermark on every page.</p></div>
+  <div class="form-row"><div class="form-group"><label>Text</label><input type="text" id="wm-text" value="CONFIDENTIAL"/></div><div class="form-group"><label>Font Size</label><input type="number" id="wm-size" value="60" min="10" max="200"/></div></div>
+  <div class="form-row"><div class="form-group"><label>Colour</label><div class="color-row"><input type="color" id="wm-color" value="#FF0000" oninput="$('wm-color-hex').value=this.value"/><input type="text" id="wm-color-hex" value="#FF0000"/></div></div><div class="form-group"><label>Opacity</label><div class="range-row"><input type="range" id="wm-opacity" min="0.02" max="0.8" step="0.01" value="0.15" oninput="$('wm-op-v').textContent=this.value"/><span class="range-val" id="wm-op-v">0.15</span></div></div></div>
+  <div class="form-row"><div class="form-group"><label>Angle</label><div class="range-row"><input type="range" id="wm-angle" min="-90" max="90" step="5" value="45" oninput="$('wm-ang-v').textContent=this.value+'°'"/><span class="range-val" id="wm-ang-v">45°</span></div></div><div class="form-group"><label>Position</label><div class="radio-group" id="wm-pos"><div class="radio-opt selected" data-val="center" onclick="selectRadio('wm-pos',this)">Center</div><div class="radio-opt" data-val="top" onclick="selectRadio('wm-pos',this)">Top</div><div class="radio-opt" data-val="bottom" onclick="selectRadio('wm-pos',this)">Bottom</div></div></div></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('watermark',{path:activePath,text:$('wm-text').value,opacity:+$('wm-opacity').value,font_size:+$('wm-size').value,color_hex:$('wm-color-hex').value,angle:+$('wm-angle').value,position:getRadio('wm-pos')})">💧 Add Watermark</button></div>
+  <div class="result-box" id="result-watermark"></div>
+</div>
+
+<!-- IMAGE WATERMARK -->
+<div class="tool-panel" id="panel-image_watermark">
+  <div class="panel-header"><h2>🖼️ Image Watermark <span class="tag tag-new">NEW</span></h2><p>Use a logo or image as a centred, semi-transparent watermark on all pages.</p></div>
+  <div class="form-group"><label>Image Path (PNG/JPEG, absolute)</label><input type="text" id="iwm-path" placeholder="/path/to/logo.png"/></div>
+  <div class="form-row"><div class="form-group"><label>Opacity</label><div class="range-row"><input type="range" id="iwm-op" min="0.02" max="0.8" step="0.02" value="0.15" oninput="$('iwm-op-v').textContent=this.value"/><span class="range-val" id="iwm-op-v">0.15</span></div></div><div class="form-group"><label>Scale (0.1–1.0 of page width)</label><div class="range-row"><input type="range" id="iwm-scale" min="0.1" max="1" step="0.05" value="0.5" oninput="$('iwm-sc-v').textContent=this.value"/><span class="range-val" id="iwm-sc-v">0.5</span></div></div></div>
+  <div class="form-group"><label>Pages</label><input type="text" id="iwm-pages" value="all"/></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('image_watermark',{path:activePath,image_path:$('iwm-path').value,opacity:+$('iwm-op').value,scale:+$('iwm-scale').value,pages:$('iwm-pages').value})">🖼️ Apply Image Watermark</button></div>
+  <div class="result-box" id="result-image_watermark"></div>
+</div>
+
+<!-- STAMP -->
+<div class="tool-panel" id="panel-stamp">
+  <div class="panel-header"><h2>🔖 Stamp</h2><p>Add a bordered rubber-stamp label on a page.</p></div>
+  <div class="form-group"><label>Presets</label><div class="radio-group" id="stamp-pre"><div class="radio-opt selected" onclick="$('st-text').value='APPROVED';selectRadio('stamp-pre',this)">APPROVED</div><div class="radio-opt" onclick="$('st-text').value='DRAFT';selectRadio('stamp-pre',this)">DRAFT</div><div class="radio-opt" onclick="$('st-text').value='CONFIDENTIAL';selectRadio('stamp-pre',this)">CONFIDENTIAL</div><div class="radio-opt" onclick="$('st-text').value='VOID';selectRadio('stamp-pre',this)">VOID</div><div class="radio-opt" onclick="$('st-text').value='REVIEWED';selectRadio('stamp-pre',this)">REVIEWED</div><div class="radio-opt" onclick="$('st-text').value='REJECTED';selectRadio('stamp-pre',this)">REJECTED</div></div></div>
+  <div class="form-row"><div class="form-group"><label>Custom Text</label><input type="text" id="st-text" value="APPROVED"/></div><div class="form-group"><label>Page (0-based)</label><input type="number" id="st-page" value="0" min="0"/></div></div>
+  <div class="form-group"><label>Colour</label><div class="color-row"><input type="color" id="st-color" value="#22c55e" oninput="$('st-color-hex').value=this.value"/><input type="text" id="st-color-hex" value="#22c55e"/></div></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('stamp',{path:activePath,stamp_text:$('st-text').value,color_hex:$('st-color-hex').value,page_num:+$('st-page').value})">🔖 Add Stamp</button></div>
+  <div class="result-box" id="result-stamp"></div>
+</div>
+
+<!-- HEADER/FOOTER -->
+<div class="tool-panel" id="panel-header_footer">
+  <div class="panel-header"><h2>📋 Header & Footer</h2><p>Use <code style="color:var(--accent2)">{page}</code> and <code style="color:var(--accent2)">{total}</code> as dynamic placeholders.</p></div>
+  <div class="form-row"><div class="form-group"><label>Header Text</label><input type="text" id="hf-header" placeholder="My Report — {page} of {total}"/></div><div class="form-group"><label>Footer Text</label><input type="text" id="hf-footer" placeholder="© 2025 Company"/></div></div>
+  <div class="form-row"><div class="form-group"><label>Font</label><select id="hf-font"><option>Helvetica</option><option>Helvetica-Bold</option><option>Times-Roman</option><option>Courier</option></select></div><div class="form-group"><label>Font Size</label><input type="number" id="hf-size" value="10" min="6" max="24"/></div></div>
+  <div class="form-row"><div class="form-group"><label>Colour</label><div class="color-row"><input type="color" id="hf-color" value="#555555" oninput="$('hf-color-hex').value=this.value"/><input type="text" id="hf-color-hex" value="#555555"/></div></div><div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:0.25rem"><label class="check-row"><input type="checkbox" id="hf-pnum" checked/><span>Auto page numbers</span></label></div></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('header_footer',{path:activePath,header:$('hf-header').value,footer:$('hf-footer').value,page_numbers:$('hf-pnum').checked,font:$('hf-font').value,font_size:+$('hf-size').value,color_hex:$('hf-color-hex').value})">📋 Apply</button></div>
+  <div class="result-box" id="result-header_footer"></div>
+</div>
+
+<!-- BORDER -->
+<div class="tool-panel" id="panel-border">
+  <div class="panel-header"><h2>⬜ Add Border</h2><p>Draw a border frame around every page.</p></div>
+  <div class="form-row"><div class="form-group"><label>Border Width</label><input type="number" id="bd-w" value="10" min="1" max="50"/></div><div class="form-group"><label>Margin</label><input type="number" id="bd-m" value="15" min="0" max="100"/></div></div>
+  <div class="form-row"><div class="form-group"><label>Colour</label><div class="color-row"><input type="color" id="bd-color" value="#000000" oninput="$('bd-color-hex').value=this.value"/><input type="text" id="bd-color-hex" value="#000000"/></div></div><div class="form-group"><label>Style</label><div class="radio-group" id="bd-style"><div class="radio-opt selected" data-val="solid" onclick="selectRadio('bd-style',this)">Solid</div><div class="radio-opt" data-val="dashed" onclick="selectRadio('bd-style',this)">Dashed</div><div class="radio-opt" data-val="dotted" onclick="selectRadio('bd-style',this)">Dotted</div></div></div></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('border',{path:activePath,border_width:+$('bd-w').value,color_hex:$('bd-color-hex').value,style:getRadio('bd-style'),margin:+$('bd-m').value})">⬜ Add Border</button></div>
+  <div class="result-box" id="result-border"></div>
+</div>
+
+<!-- COLOUR CORRECTION -->
+<div class="tool-panel" id="panel-colour">
+  <div class="panel-header"><h2>🎨 Colour Correction</h2><p>Adjust brightness, contrast, saturation, gamma and more. Pages are rasterised at chosen DPI.</p></div>
+  <div class="sliders-grid">
+    <div class="slider-card"><label>☀️ Brightness <span class="range-val" id="cc-br-v">1.0</span></label><input type="range" id="cc-br" min="0.1" max="3" step="0.05" value="1" oninput="$('cc-br-v').textContent=this.value"/></div>
+    <div class="slider-card"><label>⚡ Contrast <span class="range-val" id="cc-ct-v">1.0</span></label><input type="range" id="cc-ct" min="0.1" max="3" step="0.05" value="1" oninput="$('cc-ct-v').textContent=this.value"/></div>
+    <div class="slider-card"><label>🎨 Saturation <span class="range-val" id="cc-sat-v">1.0</span></label><input type="range" id="cc-sat" min="0" max="3" step="0.05" value="1" oninput="$('cc-sat-v').textContent=this.value"/></div>
+    <div class="slider-card"><label>🔍 Sharpness <span class="range-val" id="cc-sh-v">1.0</span></label><input type="range" id="cc-sh" min="0" max="4" step="0.1" value="1" oninput="$('cc-sh-v').textContent=this.value"/></div>
+    <div class="slider-card"><label>🌓 Gamma <span class="range-val" id="cc-gm-v">1.0</span></label><input type="range" id="cc-gm" min="0.2" max="3" step="0.05" value="1" oninput="$('cc-gm-v').textContent=this.value"/><div style="font-size:0.65rem;color:var(--text3);margin-top:0.25rem">&lt;1 brighter · &gt;1 darker</div></div>
+    <div class="slider-card"><label>📷 Render DPI <span class="range-val" id="cc-dpi-v">150</span></label><input type="range" id="cc-dpi" min="72" max="300" step="12" value="150" oninput="$('cc-dpi-v').textContent=this.value"/></div>
+  </div>
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:1rem">
+    <label class="check-row"><input type="checkbox" id="cc-gray"/><span>Greyscale</span></label>
+    <label class="check-row"><input type="checkbox" id="cc-sepia"/><span>Sepia</span></label>
+    <label class="check-row"><input type="checkbox" id="cc-inv"/><span>Invert</span></label>
+    <label class="check-row"><input type="checkbox" id="cc-auto"/><span>Auto Levels</span></label>
+  </div>
+  <div class="action-bar">
+    <button class="btn btn-primary" onclick="runTool('colour',{path:activePath,brightness:+$('cc-br').value,contrast:+$('cc-ct').value,saturation:+$('cc-sat').value,sharpness:+$('cc-sh').value,gamma:+$('cc-gm').value,dpi:+$('cc-dpi').value,grayscale:$('cc-gray').checked,sepia:$('cc-sepia').checked,invert:$('cc-inv').checked,auto_levels:$('cc-auto').checked})">🎨 Apply</button>
+    <button class="btn btn-ghost" onclick="resetSliders()">↺ Reset</button>
+  </div>
+  <div class="result-box" id="result-colour"></div>
+</div>
+
+<!-- GRAYSCALE -->
+<div class="tool-panel" id="panel-grayscale">
+  <div class="panel-header"><h2>⬜ Grayscale <span class="tag tag-new">NEW</span></h2><p>Convert all pages to true grayscale. Smaller file, ideal for printing.</p></div>
+  <div class="form-group"><label>Render DPI</label><div class="radio-group" id="gs-dpi"><div class="radio-opt" data-val="72" onclick="selectRadio('gs-dpi',this)">72</div><div class="radio-opt selected" data-val="150" onclick="selectRadio('gs-dpi',this)">150</div><div class="radio-opt" data-val="300" onclick="selectRadio('gs-dpi',this)">300</div></div></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('grayscale',{path:activePath,dpi:+getRadio('gs-dpi')})">⬜ Convert to Grayscale</button></div>
+  <div class="result-box" id="result-grayscale"></div>
+</div>
+
+<!-- BLACK & WHITE -->
+<div class="tool-panel" id="panel-blackwhite">
+  <div class="panel-header"><h2>◑ Black & White <span class="tag tag-new">NEW</span></h2><p>Convert to pure 1-bit black and white — smallest possible output file.</p></div>
+  <div class="form-row"><div class="form-group"><label>Threshold (0–255)</label><div class="range-row"><input type="range" id="bw-thresh" min="50" max="220" step="5" value="128" oninput="$('bw-tv').textContent=this.value"/><span class="range-val" id="bw-tv">128</span></div></div><div class="form-group"><label>DPI</label><div class="radio-group" id="bw-dpi"><div class="radio-opt selected" data-val="150" onclick="selectRadio('bw-dpi',this)">150</div><div class="radio-opt" data-val="300" onclick="selectRadio('bw-dpi',this)">300</div></div></div></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('blackwhite',{path:activePath,threshold:+$('bw-thresh').value,dpi:+getRadio('bw-dpi')})">◑ Convert to B&W</button></div>
+  <div class="result-box" id="result-blackwhite"></div>
+</div>
+
+<!-- TINT -->
+<div class="tool-panel" id="panel-tint">
+  <div class="panel-header"><h2>🌈 Colour Tint <span class="tag tag-new">NEW</span></h2><p>Overlay a colour tint on all pages — useful for branding or creative effects.</p></div>
+  <div class="form-row"><div class="form-group"><label>Tint Colour</label><div class="color-row"><input type="color" id="tint-c" value="#7c6fff" oninput="$('tint-hex').value=this.value"/><input type="text" id="tint-hex" value="#7c6fff"/></div></div><div class="form-group"><label>Intensity</label><div class="range-row"><input type="range" id="tint-i" min="0.05" max="0.8" step="0.05" value="0.3" oninput="$('tint-iv').textContent=this.value"/><span class="range-val" id="tint-iv">0.3</span></div></div></div>
+  <div class="form-group"><label>DPI</label><div class="radio-group" id="tint-dpi"><div class="radio-opt selected" data-val="150" onclick="selectRadio('tint-dpi',this)">150</div><div class="radio-opt" data-val="72" onclick="selectRadio('tint-dpi',this)">72</div></div></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('tint',{path:activePath,tint_color:$('tint-hex').value,intensity:+$('tint-i').value,dpi:+getRadio('tint-dpi')})">🌈 Apply Tint</button></div>
+  <div class="result-box" id="result-tint"></div>
+</div>
+
+<!-- BLUR -->
+<div class="tool-panel" id="panel-blur">
+  <div class="panel-header"><h2>💨 Blur Pages <span class="tag tag-new">NEW</span></h2><p>Apply Gaussian blur to pages — useful for creating subtle backgrounds.</p></div>
+  <div class="form-row"><div class="form-group"><label>Blur Radius</label><div class="range-row"><input type="range" id="bl-r" min="0.5" max="15" step="0.5" value="2" oninput="$('bl-rv').textContent=this.value"/><span class="range-val" id="bl-rv">2</span></div></div><div class="form-group"><label>Pages</label><input type="text" id="bl-pages" value="all"/></div></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('blur',{path:activePath,radius:+$('bl-r').value,pages:$('bl-pages').value,dpi:150})">💨 Blur</button></div>
+  <div class="result-box" id="result-blur"></div>
+</div>
+
+<!-- SHARPEN -->
+<div class="tool-panel" id="panel-sharpen">
+  <div class="panel-header"><h2>🔆 Sharpen Pages <span class="tag tag-new">NEW</span></h2><p>Sharpen blurry or soft pages — great for scanned documents.</p></div>
+  <div class="form-row"><div class="form-group"><label>Sharpness Factor</label><div class="range-row"><input type="range" id="sh-f" min="1" max="8" step="0.5" value="2" oninput="$('sh-fv').textContent=this.value"/><span class="range-val" id="sh-fv">2</span></div></div><div class="form-group"><label>Pages</label><input type="text" id="sh-pages" value="all"/></div></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('sharpen',{path:activePath,factor:+$('sh-f').value,pages:$('sh-pages').value,dpi:150})">🔆 Sharpen</button></div>
+  <div class="result-box" id="result-sharpen"></div>
+</div>
+
+<!-- DESKEW -->
+<div class="tool-panel" id="panel-deskew">
+  <div class="panel-header"><h2>📐 Auto-Deskew <span class="tag tag-new">NEW</span></h2><p>Automatically detect and correct page tilt in scanned documents.</p></div>
+  <div class="form-group"><label>Pages</label><input type="text" id="dk-pages" value="all"/></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('deskew',{path:activePath,pages:$('dk-pages').value,dpi:150})">📐 Deskew</button></div>
+  <div class="result-box" id="result-deskew"></div>
+</div>
+
+<!-- COMPRESS -->
+<div class="tool-panel" id="panel-compress">
+  <div class="panel-header"><h2>🗜️ Compress</h2><p>Reduce file size using JPEG re-compression at target quality.</p></div>
+  <div class="form-group"><label>Quality Preset</label><div class="radio-group" id="comp-preset"><div class="radio-opt" data-val="low" onclick="selectRadio('comp-preset',this)">🔴 Low 72DPI</div><div class="radio-opt selected" data-val="medium" onclick="selectRadio('comp-preset',this)">🟡 Medium 100DPI</div><div class="radio-opt" data-val="high" onclick="selectRadio('comp-preset',this)">🟢 High 150DPI</div><div class="radio-opt" data-val="maximum" onclick="selectRadio('comp-preset',this)">🔵 Max 200DPI</div></div></div>
+  <div class="form-row"><div class="form-group"><label>Custom DPI (0=preset)</label><input type="number" id="comp-dpi" value="0" min="0"/></div><div class="form-group"><label>JPEG Quality (0=preset)</label><input type="number" id="comp-q" value="0" min="0" max="100"/></div></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('compress',{path:activePath,quality:getRadio('comp-preset'),image_dpi:+$('comp-dpi').value,image_quality:+$('comp-q').value})">🗜️ Compress</button></div>
+  <div class="result-box" id="result-compress"></div>
+</div>
+
+<!-- QUALITY -->
+<div class="tool-panel" id="panel-quality">
+  <div class="panel-header"><h2>⬆️ Increase Quality</h2><p>Upscale to higher DPI using Lanczos resampling. Best for printing.</p></div>
+  <div class="form-group"><label>Target DPI</label><div class="radio-group" id="qual-dpi"><div class="radio-opt" data-val="150" onclick="selectRadio('qual-dpi',this)">150</div><div class="radio-opt selected" data-val="300" onclick="selectRadio('qual-dpi',this)">300 (Print)</div><div class="radio-opt" data-val="600" onclick="selectRadio('qual-dpi',this)">600 (High)</div></div></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('quality',{path:activePath,target_dpi:+getRadio('qual-dpi')})">⬆️ Upscale</button></div>
+  <div class="result-box" id="result-quality"></div>
+</div>
+
+<!-- MERGE -->
+<div class="tool-panel" id="panel-merge">
+  <div class="panel-header"><h2>🔗 Merge PDFs</h2><p>Combine multiple PDF files in order. Enter one absolute path per line.</p></div>
+  <div class="form-group"><label>PDF Paths (one per line)</label><textarea id="merge-paths" rows="5" placeholder="/path/to/file1.pdf&#10;/path/to/file2.pdf"></textarea></div>
+  <div class="form-group"><label>Output Name</label><input type="text" id="merge-name" value="merged"/></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('merge',{paths:$('merge-paths').value.trim().split('\n').filter(Boolean),output_name:$('merge-name').value})">🔗 Merge</button></div>
+  <div class="result-box" id="result-merge"></div>
+</div>
+
+<!-- SPLIT -->
+<div class="tool-panel" id="panel-split">
+  <div class="panel-header"><h2>✂️ Split PDF</h2><p>Break a PDF into pages or custom page ranges.</p></div>
+  <div class="form-group"><label>Mode</label><div class="radio-group" id="split-mode"><div class="radio-opt selected" data-val="each" onclick="selectRadio('split-mode',this)">One file per page</div><div class="radio-opt" data-val="ranges" onclick="selectRadio('split-mode',this)">Custom ranges</div></div></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('split',{path:activePath,pages:getRadio('split-mode')})">✂️ Split</button></div>
+  <div class="result-box" id="result-split"></div>
+</div>
+
+<!-- INTERLEAVE -->
+<div class="tool-panel" id="panel-interleave">
+  <div class="panel-header"><h2>🔀 Interleave PDFs <span class="tag tag-new">NEW</span></h2><p>Alternate pages from two PDFs (A1,B1,A2,B2…). Perfect for duplex scan reassembly.</p></div>
+  <div class="form-group"><label>First PDF path</label><input type="text" id="il-a" placeholder="/path/to/odd_pages.pdf"/></div>
+  <div class="form-group"><label>Second PDF path</label><input type="text" id="il-b" placeholder="/path/to/even_pages.pdf"/></div>
+  <div class="form-group"><label>Output Name</label><input type="text" id="il-name" value="interleaved"/></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('interleave',{path_a:$('il-a').value,path_b:$('il-b').value,output_name:$('il-name').value})">🔀 Interleave</button></div>
+  <div class="result-box" id="result-interleave"></div>
+</div>
+
+<!-- ENCRYPT -->
+<div class="tool-panel" id="panel-encrypt">
+  <div class="panel-header"><h2>🔐 Encrypt</h2><p>Password-protect the PDF.</p></div>
+  <div class="form-row"><div class="form-group"><label>User Password (to open)</label><input type="password" id="enc-user" placeholder="Required"/></div><div class="form-group"><label>Owner Password (to edit, optional)</label><input type="password" id="enc-owner" placeholder="Optional"/></div></div>
+  <div class="action-bar"><button class="btn btn-danger" onclick="runTool('encrypt',{path:activePath,user_password:$('enc-user').value,owner_password:$('enc-owner').value})">🔐 Encrypt</button></div>
+  <div class="result-box" id="result-encrypt"></div>
+</div>
+
+<!-- DECRYPT -->
+<div class="tool-panel" id="panel-decrypt">
+  <div class="panel-header"><h2>🔓 Decrypt</h2><p>Remove password protection from an encrypted PDF.</p></div>
+  <div class="form-group"><label>Current Password</label><input type="password" id="dec-pass" placeholder="PDF password"/></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('decrypt',{path:activePath,password:$('dec-pass').value})">🔓 Remove Password</button></div>
+  <div class="result-box" id="result-decrypt"></div>
+</div>
+
+<!-- METADATA -->
+<div class="tool-panel" id="panel-metadata">
+  <div class="panel-header"><h2>🏷️ Edit Metadata</h2><p>Set document title, author, subject and keywords.</p></div>
+  <div class="form-row"><div class="form-group"><label>Title</label><input type="text" id="md-title"/></div><div class="form-group"><label>Author</label><input type="text" id="md-author"/></div></div>
+  <div class="form-row"><div class="form-group"><label>Subject</label><input type="text" id="md-subject"/></div><div class="form-group"><label>Keywords</label><input type="text" id="md-kw" placeholder="comma, separated"/></div></div>
+  <div class="action-bar"><button class="btn btn-primary" onclick="runTool('metadata',{path:activePath,title:$('md-title').value,author:$('md-author').value,subject:$('md-subject').value,keywords:$('md-kw').value})">🏷️ Save Metadata</button></div>
+  <div class="result-box" id="result-metadata"></div>
+</div>
+
+<!-- PDF → IMAGES -->
+<div class="tool-panel" id="panel-to_images">
+  <div class="panel-header"><h2>🖼️ PDF → Images <span class="tag tag-new">NEW</span></h2><p>Export PDF pages as image files (PNG, JPEG, TIFF, WEBP, BMP).</p></div>
+  <div class="form-row"><div class="form-group"><label>Format</label><div class="radio-group" id="ti-fmt"><div class="radio-opt selected" data-val="PNG" onclick="selectRadio('ti-fmt',this)">PNG</div><div class="radio-opt" data-val="JPEG" onclick="selectRadio('ti-fmt',this)">JPEG</div><div class="radio-opt" data-val="TIFF" onclick="selectRadio('ti-fmt',this)">TIFF</div><div class="radio-opt" data-val="WEBP" onclick="selectRadio('ti-fmt',this)">WEBP</div></div></div><div class="form-group"><label>DPI</label><div class="radio-group" id="ti-dpi"><div class="radio-opt" data-val="72" onclick="selectRadio('ti-dpi',this)">72</div><div class="radio-opt selected" data-val="150" onclick="selectRadio('ti-dpi',this)">150</div><div class="radio-opt" data-val="300" onclick="selectRadio('ti-dpi',this)">300</div></div></div></div>
+  <div class="form-group"><label>Pages</label><input type="text" id="ti-pages" value="all" placeholder="all · 1,3 · 2-8"/></div>
+  <div class="action-bar"><button class="btn btn-cyan" onclick="runTool('to_images',{path:activePath,format:getRadio('ti-fmt'),dpi:+getRadio('ti-dpi'),pages:$('ti-pages').value})">🖼️ Export Images</button></div>
+  <div class="result-box" id="result-to_images"></div>
+</div>
+
+<!-- IMAGES → PDF -->
+<div class="tool-panel" id="panel-from_images">
+  <div class="panel-header"><h2>📄 Images → PDF <span class="tag tag-new">NEW</span></h2><p>Combine image files into a PDF. Enter one absolute path per line.</p></div>
+  <div class="form-group"><label>Image Paths (one per line, in order)</label><textarea id="fi-paths" rows="5" placeholder="/path/to/page1.png&#10;/path/to/page2.jpg"></textarea></div>
+  <div class="form-row"><div class="form-group"><label>Output Name</label><input type="text" id="fi-name" value="from_images"/></div><div class="form-group"><label>DPI</label><input type="number" id="fi-dpi" value="150"/></div></div>
+  <div class="action-bar"><button class="btn btn-cyan" onclick="runTool('from_images',{image_paths:$('fi-paths').value.trim().split('\n').filter(Boolean),output_name:$('fi-name').value,dpi:+$('fi-dpi').value})">📄 Create PDF</button></div>
+  <div class="result-box" id="result-from_images"></div>
+</div>
+
+<!-- TEXT → PDF -->
+<div class="tool-panel" id="panel-from_text">
+  <div class="panel-header"><h2>📝 Text → PDF <span class="tag tag-new">NEW</span></h2><p>Generate a new PDF from plain text content.</p></div>
+  <div class="form-group"><label>Text Content</label><textarea id="ft-text" rows="8" placeholder="Paste or type your text here...&#10;Page breaks are not automatic — content flows onto new pages."></textarea></div>
+  <div class="form-row"><div class="form-group"><label>Output Name</label><input type="text" id="ft-name" value="generated"/></div><div class="form-group"><label>Paper</label><select id="ft-paper"><option>A4</option><option>Letter</option><option>A3</option><option>Legal</option></select></div></div>
+  <div class="form-row"><div class="form-group"><label>Font</label><select id="ft-font"><option>Helvetica</option><option>Times-Roman</option><option>Courier</option></select></div><div class="form-group"><label>Font Size</label><input type="number" id="ft-size" value="11" min="6" max="36"/></div></div>
+  <div class="action-bar"><button class="btn btn-cyan" onclick="runTool('from_text',{text_content:$('ft-text').value,output_name:$('ft-name').value,paper:$('ft-paper').value,font:$('ft-font').value,font_size:+$('ft-size').value})">📝 Generate PDF</button></div>
+  <div class="result-box" id="result-from_text"></div>
+</div>
+
+</main>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+// ── CORE ──────────────────────────────────────────────────────────────
+let activePath = null;
+function $(id){return document.getElementById(id)}
+
+function showPanel(name){
+  document.querySelectorAll('.tool-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const p=$(`panel-${name}`); if(p) p.classList.add('active');
+  const n=document.querySelector(`[data-panel="${name}"]`); if(n) n.classList.add('active');
+}
+
+// ── UPLOAD ────────────────────────────────────────────────────────────
+function handleUpload(input){
+  const file=input.files[0]; if(!file) return;
+  const fd=new FormData(); fd.append('file',file);
+  toast('Uploading…','info');
+  fetch('/api/upload',{method:'POST',body:fd})
+    .then(r=>r.json()).then(data=>{
+      if(data.error){toast(data.error,'error');return}
+      activePath=data.path;
+      $('active-file-badge').textContent=data.filename;
+      $('active-file-badge').classList.remove('empty');
+      showFileInfo(data.info);
+      showPanel('upload');
+      toast(`✅ ${data.filename} loaded`,'success');
+    }).catch(e=>toast('Upload failed: '+e,'error'));
+}
+function dropFile(e){
+  e.preventDefault(); $('upload-zone').classList.remove('drag');
+  const file=e.dataTransfer.files[0]; if(!file) return;
+  const dt=new DataTransfer(); dt.items.add(file);
+  $('file-input').files=dt.files; handleUpload($('file-input'));
+}
+function showFileInfo(info){
+  $('file-info').classList.remove('hidden');
+  const cards=[
+    {l:'Pages',v:info.pages},{l:'Size',v:`${info.width_mm}×${info.height_mm}mm`},
+    {l:'Orientation',v:info.orientation},{l:'File Size',v:`${info.size_kb} KB`},
+    {l:'Encrypted',v:info.encrypted?'🔐 Yes':'🔓 No'},{l:'pt Dimensions',v:`${info.width_pt}×${info.height_pt}`},
+  ];
+  $('info-grid').innerHTML=cards.map(c=>`<div class="info-card"><div class="info-label">${c.l}</div><div class="info-value">${c.v}</div></div>`).join('');
+  $('info-json').textContent=JSON.stringify(info,null,2);
+}
+
+// ── TOOL RUNNER ──────────────────────────────────────────────────────
+function runTool(endpoint, payload){
+  if(!activePath && !['merge','interleave','from_images','from_text'].includes(endpoint)){
+    toast('⚠️ Upload a PDF first','error'); return;
+  }
+  const rb=$(`result-${endpoint}`);
+  if(rb){
+    rb.classList.add('show');
+    rb.innerHTML=`<div class="result-header"><span>Processing…</span><div class="result-status"><div class="dot" style="background:var(--yellow)"></div>Running</div></div><div class="result-body">⏳ Please wait…</div><div class="progress-bar"><div class="progress-fill" id="p-${endpoint}" style="width:25%"></div></div>`;
+    setTimeout(()=>{const p=$(`p-${endpoint}`);if(p)p.style.width='70%'},500);
+  }
+  fetch(`/api/${endpoint}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(r=>r.json()).then(data=>{
+      if(rb) showResult(rb,endpoint,data);
+      if(data.success||data.sha256||data.fonts) toast('✅ Done!','success');
+      else toast('❌ '+(data.error||'Unknown error'),'error');
+    }).catch(e=>{if(rb)showResult(rb,endpoint,{error:String(e)});toast('Error: '+e,'error')});
+}
+
+function showResult(box,endpoint,data){
+  const ok=!!(data.success||data.sha256||data.fonts||data.images_extracted!==undefined||data.tables_found!==undefined||data.pages_extracted!==undefined);
+  const body=Object.entries(data).filter(([k])=>k!=='trace'&&k!=='pages_detail').map(([k,v])=>`${k}: ${JSON.stringify(v)}`).join('\n');
+  const dlBtn=data.output?`<a href="/api/download?path=${encodeURIComponent(data.output)}" download><button class="btn btn-success btn-sm">⬇️ Download</button></a>`:'';
+  const multiDl=data.outputs?data.outputs.map(op=>`<a href="/api/download?path=${encodeURIComponent(op)}" download><button class="btn btn-success btn-sm">⬇️ ${op.split('/').pop().substring(0,25)}</button></a>`).join(''):'';
+  const fileDl=data.files?data.files.map(f=>`<a href="/api/download?path=${encodeURIComponent(f)}" download><button class="btn btn-ghost btn-sm">⬇️ ${f.split('/').pop()}</button></a>`).join(''):'';
+  box.innerHTML=`
+    <div class="result-header"><span>${ok?'✅ Success':'❌ Error'}</span><div class="result-status"><div class="dot ${ok?'ok':'err'}"></div>${ok?'Complete':'Failed'}</div></div>
+    <div class="result-body">${body}</div>
+    ${(dlBtn||multiDl||fileDl)?`<div class="result-actions">${dlBtn}${multiDl}${fileDl}<button class="btn btn-ghost btn-sm" onclick="loadOutputs();showPanel('outputs')">📁 All Outputs</button></div>`:''}`;
+}
+
+// ── OUTPUTS ───────────────────────────────────────────────────────────
+function loadOutputs(){
+  fetch('/api/outputs').then(r=>r.json()).then(files=>{
+    const l=$('outputs-list');
+    if(!files.length){l.innerHTML='<p style="color:var(--text3);font-size:0.8rem;margin-top:0.75rem">No outputs yet.</p>';return}
+    l.innerHTML=files.map(f=>`<div class="output-item"><span class="output-icon">📄</span><div style="flex:1;overflow:hidden"><div class="output-name" title="${f.name}">${f.name}</div><div class="output-size">${f.size_kb} KB</div></div><a href="/api/download?path=${encodeURIComponent(f.path)}" download><button class="btn btn-ghost btn-sm">⬇️</button></a></div>`).join('');
+  });
+}
+
+// ── RADIO ─────────────────────────────────────────────────────────────
+function selectRadio(gid,el){document.querySelectorAll(`#${gid} .radio-opt`).forEach(o=>o.classList.remove('selected'));el.classList.add('selected')}
+function getRadio(gid){const s=document.querySelector(`#${gid} .radio-opt.selected`);return s?(s.dataset.val||s.textContent.trim()):'';}
+
+// ── NUP PREVIEW ──────────────────────────────────────────────────────
+function updateNupPreview(n){
+  const g={2:[1,2],4:[2,2],6:[2,3],9:[3,3]}[n]||[1,2];
+  const p=$('nup-preview');
+  p.style.gridTemplateColumns=`repeat(${g[0]},1fr)`;
+  p.style.gridTemplateRows=`repeat(${g[1]},1fr)`;
+  p.innerHTML=Array(n).fill('<div class="nup-cell"></div>').join('');
+}
+
+// ── COLOR PICKER SYNC ─────────────────────────────────────────────────
+function syncColorPicker(pickId,hexId){
+  const v=$(hexId).value;
+  if(/^#[0-9a-fA-F]{6}$/.test(v)) $(pickId).value=v;
+}
+
+// ── RESET SLIDERS ────────────────────────────────────────────────────
+function resetSliders(){
+  [['cc-br','cc-br-v'],['cc-ct','cc-ct-v'],['cc-sat','cc-sat-v'],['cc-sh','cc-sh-v'],['cc-gm','cc-gm-v']].forEach(([r,v])=>{$(r).value=1;$(v).textContent='1.0'});
+  ['cc-gray','cc-sepia','cc-inv','cc-auto'].forEach(id=>{$(id).checked=false});
+  toast('Sliders reset','info');
+}
+
+// ── REDACT HELPERS ────────────────────────────────────────────────────
+function addRegionRow(){
+  const div=document.createElement('div'); div.className='region-item';
+  div.innerHTML='X:<input type="number" value="100"/> Y:<input type="number" value="200"/> W:<input type="number" value="150"/> H:<input type="number" value="25"/><button onclick="this.parentElement.remove()" style="color:var(--red);font-size:1rem;margin-left:auto">✕</button>';
+  $('rd-regions').appendChild(div);
+}
+function runRedact(){
+  const items=[...$('rd-regions').querySelectorAll('.region-item')];
+  const regions=items.map(row=>{const ins=[...row.querySelectorAll('input')];return ins.map(i=>+i.value)});
+  runTool('redact',{path:activePath,page_num:+$('rd-page').value,regions,color_hex:$('rd-color-hex').value});
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────
+function toast(msg,type='info'){
+  const c=$('toast-container');
+  const el=document.createElement('div'); el.className=`toast ${type}`; el.textContent=msg;
+  c.appendChild(el);
+  setTimeout(()=>{el.classList.add('out');setTimeout(()=>el.remove(),300)},3500);
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────
+showPanel('upload');
+document.querySelectorAll('input[type=color]').forEach(p=>{
+  p.addEventListener('input',()=>{
+    const sib=p.nextElementSibling;
+    if(sib&&sib.type==='text') sib.value=p.value;
+  });
+});
+</script>
+</body>
+</html>
